@@ -1,0 +1,90 @@
+domain:
+
+enums:
+
+RecuStatus:
+  - en_attente
+  - traite
+  - echoue
+
+DepenseCategorie:
+  - alimentaire
+  - boissons
+  - hygiene
+  - entretien
+  - autre
+
+models:
+
+User:
+  relations:
+    - hasMany Recu
+
+Recu:
+  relations:
+    - belongsTo User
+    - hasMany Depense
+
+Depense:
+  relations:
+    - belongsTo Recu
+
+database:
+
+tables:
+
+recus:
+  columns:
+    - id
+    - user_id
+    - texte_source
+    - statut
+    - payload_ia
+    - error_message
+    - created_at
+    - updated_at
+
+depenses:
+  columns:
+    - id
+    - recu_id
+    - libelle
+    - quantite
+    - prix_unitaire
+    - categorie
+    - created_at
+    - updated_at
+
+constraints:
+
+- Toute relation Recu -> Depense doit utiliser cascadeOnDelete()
+- La suppression d'un reçu doit supprimer automatiquement toutes les dépenses associées
+
+security:
+
+ownership:
+
+- Un utilisateur ne peut accéder qu'à ses propres reçus
+- Un utilisateur ne peut accéder qu'à ses propres dépenses
+- Toute requête de listing ou détail doit être filtrée par l'utilisateur authentifié
+- Ne jamais utiliser Recu::all() ou Depense::all() pour afficher des données utilisateur
+- Utiliser les relations de l'utilisateur authentifié ou des policies Laravel
+
+ai_extraction:
+
+schema_validation:
+
+- Toute réponse IA doit être validée contre le contrat JSON défini dans le projet
+- Si le payload ne respecte pas le schéma attendu, aucune dépense ne doit être créée
+- Le payload brut doit être conservé pour audit/debug
+- Le reçu doit passer au statut "echoue"
+- Un message d'erreur explicite doit être enregistré
+- Aucune exception non gérée ne doit être affichée à l'utilisateur
+
+failure_handling:
+
+- Timeout provider IA => statut echoue
+- Provider IA indisponible => statut echoue
+- JSON invalide => statut echoue
+- Structured output incomplet => statut echoue
+
